@@ -31,6 +31,7 @@ var (
 
 	commAns = struct {
 		Username string
+		SaveAs   string
 		RoleType string `json:"roleType"`
 	}{}
 
@@ -122,6 +123,12 @@ func main() {
 			Name:     "username",
 			Prompt:   &survey.Input{Message: "Please input username which you want to generate kubeconfig for:"},
 			Validate: survey.Required,
+		},
+		{
+			Name: "saveAs",
+			Prompt: &survey.Input{
+				Message: "Please input kubeconfig save as name(default 'username.kubeconfig):",
+			},
 		},
 		{
 			Name: "roleType",
@@ -230,6 +237,7 @@ func main() {
 		ca,
 		cert.ClientCert,
 		cert.ClientKey,
+		commAns.SaveAs,
 	)
 
 	var selectClusterRoleNames []string
@@ -434,7 +442,7 @@ func approvalK8sCSR(name string) error {
 	return nil
 }
 
-func generateKubeConfig(clusterEndpoint, clusterName, username, clusterCA, clientCert, clientKey string) {
+func generateKubeConfig(clusterEndpoint, clusterName, username, clusterCA, clientCert, clientKey, saveAs string) {
 	kubecfg := kubeconfig.NewConfig()
 
 	cluster := kubeconfig.NewCluster()
@@ -461,9 +469,13 @@ func generateKubeConfig(clusterEndpoint, clusterName, username, clusterCA, clien
 		return
 	}
 
-	filename := fmt.Sprintf("%s.kubeconfig", username)
+	filename := saveAs
 
-	if err := ioutil.WriteFile(filename, c, os.ModePerm); err != nil {
+	if saveAs == "" {
+		filename = fmt.Sprintf("%s.kubeconfig", username)
+	}
+
+	if err := ioutil.WriteFile(filename, c, 0644); err != nil {
 		log.Errorf("write kubeconfig file err: %v", err)
 		return
 	}

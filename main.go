@@ -401,6 +401,11 @@ func waitForK8sCsrReady(name string) (csr *certv1beta1.CertificateSigningRequest
 			continue
 		}
 
+		if len(csr.Status.Certificate) == 0 {
+			time.Sleep(time.Second)
+			continue
+		}
+
 		for _, c := range csr.Status.Conditions {
 			if c.Type == certv1beta1.CertificateApproved {
 				return

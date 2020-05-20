@@ -48,6 +48,7 @@ var (
 	kclient    *kubernetes.Clientset
 )
 
+// CertBundle 证书
 type CertBundle struct {
 	CSR        string `json:"csr" bson:"csr"`
 	ClientCert string `json:"client_cert" bson:"client_cert"`

@@ -218,6 +218,9 @@ func main() {
 		log.Fatalf("approval k8s csr err: %v", err)
 	}
 
+	if len(k8scsr.Status.Certificate) == 0 {
+		log.Fatalf("get root client cert err")
+	}
 	cert.ClientCert = string(k8scsr.Status.Certificate)
 
 	generateKubeConfig(

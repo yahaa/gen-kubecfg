@@ -12,7 +12,7 @@ import (
 	"github.com/AlecAivazis/survey/v2"
 	cfsslcsr "github.com/cloudflare/cfssl/csr"
 	"github.com/cloudflare/cfssl/log"
-	"github.com/yahaa/storesd/utils"
+	"github.com/yahaa/gen-kubecfg/utils"
 	certv1beta1 "k8s.io/api/certificates/v1beta1"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"

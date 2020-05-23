@@ -45,4 +45,4 @@ Temporary Items
 # vendor/
 *.kubeconfig
 .idea
-
+gen-kubecfg

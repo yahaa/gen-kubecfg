@@ -24,28 +24,10 @@ import (
 )
 
 var (
-	caConfigMap       = "extension-apiserver-authentication"
-	kubeConfigVersion = "v1"
-	kubeConfigKind    = "Config"
-	caFileName        = "client-ca-file"
-
-	commAns = struct {
-		Username string
-		SaveAs   string
-		RoleType string `json:"roleType"`
-	}{}
-
-	clusterAns = struct {
-		ClusterRoles []string
-	}{}
-
-	nsAns = struct {
-		Namespaces   string
-		ClusterRoles []string
-	}{}
-
-	kubeConfig string
-	kclient    *kubernetes.Clientset
+	caConfigMap = "extension-apiserver-authentication"
+	caFileName  = "client-ca-file"
+	kubeConfig  string
+	kclient     *kubernetes.Clientset
 )
 
 // CertBundle 证书
@@ -167,6 +149,21 @@ func main() {
 			},
 		},
 	}
+
+	var commAns = struct {
+		Username string
+		SaveAs   string
+		RoleType string `json:"roleType"`
+	}{}
+
+	var clusterAns = struct {
+		ClusterRoles []string
+	}{}
+
+	var nsAns = struct {
+		Namespaces   string
+		ClusterRoles []string
+	}{}
 
 	if err := survey.Ask(commonQ, &commAns); err != nil {
 		log.Fatalf("got questions answers err: %v", err)
@@ -459,8 +456,8 @@ func generateKubeConfig(clusterEndpoint, clusterName, username, clusterCA, clien
 	kubeContext.AuthInfo = username
 
 	kubecfg.Contexts[clusterName] = kubeContext
-	kubecfg.APIVersion = kubeConfigVersion
-	kubecfg.Kind = kubeConfigKind
+	kubecfg.APIVersion = "v1"
+	kubecfg.Kind = "Config"
 	kubecfg.Clusters[clusterName] = cluster
 	kubecfg.AuthInfos[username] = authInfo
 	kubecfg.CurrentContext = clusterName

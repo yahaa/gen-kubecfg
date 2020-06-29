@@ -4,7 +4,9 @@ kubeconfig 生成工具
 
 ### 安装
 ```bash
-$ go get github.com/yahaa/gen-kubecfg
+$ git clone git@github.com:yahaa/gen-kubecfg.git
+$ cd gen-kubecfg
+$ go build -o gen-kubecfg main.go
 ```
 
 ### 使用

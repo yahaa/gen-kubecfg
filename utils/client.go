@@ -199,6 +199,10 @@ func (kt *KubeTool) ApprovalK8sCSR(name string) error {
 }
 
 func (kt *KubeTool) GetServiceAccountNames(nameSpace string) []string {
+	if err := kt.createNsIfNotExist(nameSpace); err != nil {
+		log.Fatalf("create ns: %v err: %v", nameSpace, err)
+	}
+
 	serviceAccounts, err := kt.client.CoreV1().ServiceAccounts(nameSpace).List(metav1.ListOptions{})
 	if err != nil {
 		log.Fatalf("list cluster role err: %v", err)

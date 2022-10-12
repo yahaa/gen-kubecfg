@@ -186,9 +186,6 @@ func generateSSLKubeConfig(kt *utils.KubeTool, cfg *rest.Config, clusterName, ca
 		CSR:       string(csrBytes),
 		ClientKey: string(keyBytes),
 	}
-	if err != nil {
-		log.Fatalf("parse cfssl response err: %v", err)
-	}
 
 	if err := kt.ReCreateK8sCSR(commAns.Username, bundleCert.CSR); err != nil {
 		log.Fatalf("reCreate k8s csr err: %v", err)

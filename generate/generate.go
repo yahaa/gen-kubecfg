@@ -1,4 +1,4 @@
-package kubecfg
+package generate
 
 import (
 	"fmt"
@@ -6,7 +6,7 @@ import (
 
 	"github.com/cloudflare/cfssl/log"
 	kubecmd "k8s.io/client-go/tools/clientcmd"
-	kubeconfig "k8s.io/client-go/tools/clientcmd/api"
+	kubecmdapi "k8s.io/client-go/tools/clientcmd/api"
 )
 
 const (
@@ -40,14 +40,14 @@ func GetClusterName(kubeConfig string) (string, error) {
 	return cfg.CurrentContext, nil
 }
 
-func GenerateKubeConfig(cfgType KubeConfigType, clusterEndpoint, clusterName, username, clusterCA, clientCert, clientKey, token, saveAs string) {
-	kubecfg := kubeconfig.NewConfig()
+func KubeConfig(cfgType KubeConfigType, clusterEndpoint, clusterName, username, clusterCA, clientCert, clientKey, token, saveAs string) {
+	kubecfg := kubecmdapi.NewConfig()
 
-	cluster := kubeconfig.NewCluster()
+	cluster := kubecmdapi.NewCluster()
 	cluster.Server = clusterEndpoint
 	cluster.CertificateAuthorityData = []byte(clusterCA)
 
-	authInfo := kubeconfig.NewAuthInfo()
+	authInfo := kubecmdapi.NewAuthInfo()
 
 	if cfgType == SSLType {
 		authInfo.ClientCertificateData = []byte(clientCert)
@@ -56,7 +56,7 @@ func GenerateKubeConfig(cfgType KubeConfigType, clusterEndpoint, clusterName, us
 		authInfo.Token = token
 	}
 
-	kubeContext := kubeconfig.NewContext()
+	kubeContext := kubecmdapi.NewContext()
 	kubeContext.Cluster = clusterName
 	kubeContext.AuthInfo = username
 

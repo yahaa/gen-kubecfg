@@ -15,7 +15,7 @@ import (
 	"k8s.io/client-go/rest"
 
 	"github.com/yahaa/gen-kubecfg/cert"
-	"github.com/yahaa/gen-kubecfg/kubecfg"
+	"github.com/yahaa/gen-kubecfg/generate"
 	"github.com/yahaa/gen-kubecfg/utils"
 )
 
@@ -23,7 +23,7 @@ var (
 	caConfigMap = "extension-apiserver-authentication"
 	caFileName  = "client-ca-file"
 	kubeConfig  string
-	kclient     *kubernetes.Clientset
+	clientSet   *kubernetes.Clientset
 	token       string
 )
 
@@ -40,17 +40,17 @@ func main() {
 	if err != nil {
 		log.Fatalf("create cluster config err: %v", err)
 	}
-	kclient, err = utils.NewClientset(kubeConfig)
+	clientSet, err = utils.NewClientset(kubeConfig)
 	if err != nil {
 		log.Fatalf("create k8s client err: %v", err)
 	}
 
-	clusterName, err := kubecfg.GetClusterName(kubeConfig)
+	clusterName, err := generate.GetClusterName(kubeConfig)
 	if err != nil {
 		log.Fatalf("get cluster name from kubeConfig err: %v", err)
 	}
 
-	cm, err := kclient.CoreV1().ConfigMaps("kube-system").Get(caConfigMap, metav1.GetOptions{})
+	cm, err := clientSet.CoreV1().ConfigMaps("kube-system").Get(caConfigMap, metav1.GetOptions{})
 	if err != nil {
 		log.Fatalf("get config map %s err %w", caConfigMap, err)
 	}
@@ -59,7 +59,7 @@ func main() {
 		log.Fatalf("not found %s", caFileName)
 	}
 
-	kt := utils.NewKubeTool(kclient)
+	kt := utils.NewKubeTool(clientSet)
 
 	var cfgTypeQ = []*survey.Question{
 		{
@@ -205,8 +205,8 @@ func generateSSLKubeConfig(kt *utils.KubeTool, cfg *rest.Config, clusterName, ca
 	}
 	bundleCert.ClientCert = string(k8sCSR.Status.Certificate)
 
-	kubecfg.GenerateKubeConfig(
-		kubecfg.SSLType,
+	generate.KubeConfig(
+		generate.SSLType,
 		cfg.Host,
 		clusterName,
 		commAns.Username,
@@ -358,7 +358,7 @@ func generateTokenKubeConfig(kt *utils.KubeTool, cfg *rest.Config, clusterName, 
 				Name: accountNameAns.AccountName,
 			},
 		}
-		sa, err := kclient.CoreV1().ServiceAccounts(commAns.NameSpace).Create(sa)
+		sa, err := clientSet.CoreV1().ServiceAccounts(commAns.NameSpace).Create(sa)
 		if err != nil {
 			log.Fatalf("service account create err: %v", err)
 		}
@@ -389,11 +389,11 @@ func generateTokenKubeConfig(kt *utils.KubeTool, cfg *rest.Config, clusterName, 
 			log.Errorf("generate binding err: %v", err)
 			return
 		}
-		sa, err = kclient.CoreV1().ServiceAccounts(commAns.NameSpace).Get(accountNameAns.AccountName, metav1.GetOptions{})
+		sa, err = clientSet.CoreV1().ServiceAccounts(commAns.NameSpace).Get(accountNameAns.AccountName, metav1.GetOptions{})
 		if err != nil {
 			log.Fatalf("got service account err: %v", err)
 		}
-		secret, err := kclient.CoreV1().Secrets(commAns.NameSpace).Get(sa.Secrets[0].Name, metav1.GetOptions{})
+		secret, err := clientSet.CoreV1().Secrets(commAns.NameSpace).Get(sa.Secrets[0].Name, metav1.GetOptions{})
 		if err != nil {
 			log.Fatalf("got service account err: %v", err)
 		}
@@ -413,19 +413,19 @@ func generateTokenKubeConfig(kt *utils.KubeTool, cfg *rest.Config, clusterName, 
 		if err := survey.Ask(accountNameQ, &accountNameAns); err != nil {
 			log.Fatalf("got questions answers err: %v", err)
 		}
-		sa, err := kclient.CoreV1().ServiceAccounts(commAns.NameSpace).Get(accountNameAns.AccountName, metav1.GetOptions{})
+		sa, err := clientSet.CoreV1().ServiceAccounts(commAns.NameSpace).Get(accountNameAns.AccountName, metav1.GetOptions{})
 		if err != nil {
 			log.Fatalf("got service account err: %v", err)
 		}
-		secret, err := kclient.CoreV1().Secrets(commAns.NameSpace).Get(sa.Secrets[0].Name, metav1.GetOptions{})
+		secret, err := clientSet.CoreV1().Secrets(commAns.NameSpace).Get(sa.Secrets[0].Name, metav1.GetOptions{})
 		if err != nil {
 			log.Fatalf("got service account err: %v", err)
 		}
 		token = string(secret.Data["token"])
 	}
 
-	kubecfg.GenerateKubeConfig(
-		kubecfg.TokenType,
+	generate.KubeConfig(
+		generate.TokenType,
 		cfg.Host,
 		clusterName,
 		commAns.Username,

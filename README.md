@@ -3,10 +3,11 @@
 kubeconfig 生成工具
 
 ### 安装
+
+依赖 `go 1.18+`
+
 ```bash
-$ git clone git@github.com:yahaa/gen-kubecfg.git
-$ cd gen-kubecfg
-$ go build -o gen-kubecfg main.go
+$ go install github.com/yahaa/gen-kubecfg@latest
 ```
 
 ### 使用

@@ -9,13 +9,6 @@ import (
 	kubecmdapi "k8s.io/client-go/tools/clientcmd/api"
 )
 
-const (
-	TokenType KubeConfigType = "token"
-	SSLType   KubeConfigType = "ssl"
-)
-
-type KubeConfigType string
-
 func GetClusterName(kubeConfig string) (string, error) {
 	data, err := ioutil.ReadFile(kubeConfig)
 	if err != nil {
@@ -40,48 +33,44 @@ func GetClusterName(kubeConfig string) (string, error) {
 	return cfg.CurrentContext, nil
 }
 
-func KubeConfig(cfgType KubeConfigType, clusterEndpoint, clusterName, username, clusterCA, clientCert, clientKey, token, saveAs string) {
+func KubeConfig(input Params) {
 	kubecfg := kubecmdapi.NewConfig()
 
 	cluster := kubecmdapi.NewCluster()
-	cluster.Server = clusterEndpoint
-	cluster.CertificateAuthorityData = []byte(clusterCA)
+	cluster.Server = input.ClusterEndpoint
+	cluster.CertificateAuthorityData = []byte(input.ClusterCA)
 
 	authInfo := kubecmdapi.NewAuthInfo()
 
-	if cfgType == SSLType {
-		authInfo.ClientCertificateData = []byte(clientCert)
-		authInfo.ClientKeyData = []byte(clientKey)
-	} else {
-		authInfo.Token = token
+	switch input.Type {
+	case ClientCertType:
+		authInfo.ClientCertificateData = []byte(input.ClientCert)
+		authInfo.ClientKeyData = []byte(input.ClientKey)
+	default:
+		authInfo.Token = input.Token
 	}
 
 	kubeContext := kubecmdapi.NewContext()
-	kubeContext.Cluster = clusterName
-	kubeContext.AuthInfo = username
+	kubeContext.Cluster = input.ClusterName
+	kubeContext.AuthInfo = input.Username
 
-	kubecfg.Contexts[clusterName] = kubeContext
+	kubecfg.Contexts[input.ClusterName] = kubeContext
 	kubecfg.APIVersion = "v1"
 	kubecfg.Kind = "Config"
-	kubecfg.Clusters[clusterName] = cluster
-	kubecfg.AuthInfos[username] = authInfo
-	kubecfg.CurrentContext = clusterName
+	kubecfg.Clusters[input.ClusterName] = cluster
+	kubecfg.AuthInfos[input.Username] = authInfo
+	kubecfg.CurrentContext = input.ClusterName
 
 	c, err := kubecmd.Write(*kubecfg)
 	if err != nil {
 		return
 	}
-
-	filename := saveAs
-
-	if saveAs == "" {
-		filename = fmt.Sprintf("%s.kubeconfig", username)
-	}
+	filename := input.SaveAsFile()
 
 	if err := ioutil.WriteFile(filename, c, 0644); err != nil {
 		log.Errorf("write kubeconfig file err: %v", err)
 		return
 	}
 
-	log.Infof("generate kubeconfig for user '%s' success, save as ./%s", username, filename)
+	log.Infof("generate kubeconfig for user '%s' success, save as ./%s", input.Username, filename)
 }

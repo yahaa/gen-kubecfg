@@ -1,4 +1,4 @@
-package utils
+package generate
 
 import (
 	"fmt"
@@ -13,15 +13,19 @@ import (
 	"k8s.io/client-go/kubernetes"
 )
 
-type KubeTool struct {
+type Client struct {
 	client kubernetes.Interface
 }
 
-func NewKubeTool(client kubernetes.Interface) *KubeTool {
-	return &KubeTool{client: client}
+func (c *Client) ClientSet() kubernetes.Interface {
+	return c.client
 }
 
-func (kt *KubeTool) createNsIfNotExist(namespace string) error {
+func NewClient(client kubernetes.Interface) *Client {
+	return &Client{client: client}
+}
+
+func (kt *Client) createNsIfNotExist(namespace string) error {
 	_, err := kt.client.CoreV1().Namespaces().Get(namespace, metav1.GetOptions{})
 	if err != nil && apierrors.IsNotFound(err) {
 		ns := &corev1.Namespace{
@@ -39,7 +43,7 @@ func (kt *KubeTool) createNsIfNotExist(namespace string) error {
 	return nil
 }
 
-func (kt *KubeTool) reCreateRoleBinding(roleBindingType, name, username, namespace, roleRef, saNameSpace string) error {
+func (kt *Client) reCreateRoleBinding(roleBindingType, name, username, namespace, roleRef, saNameSpace string) error {
 	_, err := kt.client.RbacV1().RoleBindings(namespace).Get(name, metav1.GetOptions{})
 	if err != nil && !apierrors.IsNotFound(err) {
 		return err
@@ -86,7 +90,7 @@ func (kt *KubeTool) reCreateRoleBinding(roleBindingType, name, username, namespa
 	return nil
 }
 
-func (kt *KubeTool) reCreateClusterRoleBinding(roleBindingType, name, username, roleRef, saNameSpace string) error {
+func (kt *Client) reCreateClusterRoleBinding(roleBindingType, name, username, roleRef, saNameSpace string) error {
 	_, err := kt.client.RbacV1().ClusterRoleBindings().Get(name, metav1.GetOptions{})
 	if err != nil && !apierrors.IsNotFound(err) {
 		return err
@@ -132,7 +136,7 @@ func (kt *KubeTool) reCreateClusterRoleBinding(roleBindingType, name, username, 
 	return nil
 }
 
-func (kt *KubeTool) ReCreateK8sCSR(cn, csrStr string) error {
+func (kt *Client) ReCreateK8sCSR(cn, csrStr string) error {
 	k8sCSR := certv1beta1.CertificateSigningRequest{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: cn,
@@ -156,7 +160,7 @@ func (kt *KubeTool) ReCreateK8sCSR(cn, csrStr string) error {
 	return nil
 }
 
-func (kt *KubeTool) WaitForK8sCsrReady(name string) (csr *certv1beta1.CertificateSigningRequest, err error) {
+func (kt *Client) WaitForK8sCsrReady(name string) (csr *certv1beta1.CertificateSigningRequest, err error) {
 	for i := 0; i < 5; i++ {
 		csr, err = kt.client.CertificatesV1beta1().CertificateSigningRequests().Get(name, metav1.GetOptions{})
 		if err != nil {
@@ -179,7 +183,7 @@ func (kt *KubeTool) WaitForK8sCsrReady(name string) (csr *certv1beta1.Certificat
 	return nil, fmt.Errorf("wait csr to be approved timeout")
 }
 
-func (kt *KubeTool) ApprovalK8sCSR(name string) error {
+func (kt *Client) ApprovalK8sCSR(name string) error {
 	k8sCSR := &certv1beta1.CertificateSigningRequest{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: name,
@@ -198,7 +202,7 @@ func (kt *KubeTool) ApprovalK8sCSR(name string) error {
 	return nil
 }
 
-func (kt *KubeTool) GetServiceAccountNames(nameSpace string) []string {
+func (kt *Client) GetServiceAccountNames(nameSpace string) []string {
 	if err := kt.createNsIfNotExist(nameSpace); err != nil {
 		log.Fatalf("create ns: %v err: %v", nameSpace, err)
 	}
@@ -214,7 +218,7 @@ func (kt *KubeTool) GetServiceAccountNames(nameSpace string) []string {
 	return accountNames
 }
 
-func (kt *KubeTool) GetClusterRoleNames() []string {
+func (kt *Client) GetClusterRoleNames() []string {
 	clusterRoles, err := kt.client.RbacV1().ClusterRoles().List(metav1.ListOptions{})
 	if err != nil {
 		return nil
@@ -228,7 +232,7 @@ func (kt *KubeTool) GetClusterRoleNames() []string {
 	return clusterRoleNames
 }
 
-func (kt *KubeTool) GenerateBinding(roleBindingType, saNameSpace, username string, clusterRoles []string, namespaces []string) error {
+func (kt *Client) GenerateBinding(roleBindingType, saNameSpace, username string, clusterRoles []string, namespaces []string) error {
 	if len(namespaces) == 0 {
 		for _, cr := range clusterRoles {
 			name := fmt.Sprintf("%s-%s", username, cr)
